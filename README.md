@@ -13,7 +13,7 @@ It is your objective to maximize your balance. This can done through bonuses obt
 ## Set up
 
 The basic game settings are predefined in figgie.py.
-- 4 players (2 bots), 20 rounds, 350 starting balance
+- 4 players (2 bots), 5-20 rounds, 350 starting balance
 
 Custom settings can be enabled in figgie.py.
 
