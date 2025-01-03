@@ -18,15 +18,16 @@ opposite_action = {
 }
 
 class Game:
-    def __init__(self, num_players, player_names, rounds, starting_balance):
+    def __init__(self, num_players, player_names, rounds, starting_balance, pot):
         self.players = [Human(name, starting_balance) for name in player_names]
         self.players += [Bot("Bot"+str(i), starting_balance) for i in range(num_players - len(self.players))]
 
+        self.pot = pot
         self.rounds = rounds
         self.goalSuit = random.choice(suits)
         self.commonSuit = opposite_suit[self.goalSuit]
 
-        self.pack = Pack(self.goalSuit, self.commonSuit)
+        self.pack = Pack(self.commonSuit)
 
         self.round_actions = []
         self.round_transactions = []
@@ -46,12 +47,22 @@ class Game:
         # display hand for each player
         self.display_hands()
 
-        # self.rounds =  amount of rounds 
-        for round in range(self.rounds):
+        # players evenly split pot
+        self.ready_pot()
+
+        # self.rounds = amount of rounds 
+        for round in range(self.rounds-1):
             print(f"ROUND {round + 1}")
             self.play_round()
             self.display_actions()
             self.display_update()
+
+        # include reward in final round
+        print(f"ROUND {self.rounds}")
+        self.play_round()
+        self.display_actions()
+        self.reward_players()
+        self.display_update()
 
         print("Game finished!")
 
@@ -95,6 +106,11 @@ class Game:
             # crate a min-heap of asks
             heapq.heappush(self.market[suit]["ask"], (int(price), player))
 
+    def ready_pot(self):
+        individual_pot = self.pot // len(self.players)
+        for player in self.players:
+            player.update_balance(-individual_pot)
+
     def display_hands(self):
         print("Hands of each player:")
         for player in self.players:
@@ -123,3 +139,27 @@ class Game:
         for player in self.players:
             player.display_status()
         print("=============================\n")
+
+    # distribute pot and reward for goal suit
+    def reward_players(self):
+        max_goal_suits = 0
+
+        # find player w/ max num of goal suits
+        # and reward for goal suits ($10 per)
+        for player in self.players:
+            num_goal_suit = player.get_hand()[self.goalSuit]
+            player.balance += num_goal_suit * 10
+            self.pot -= 10
+
+            if num_goal_suit < max_goal_suits:
+                max_goal_suits = num_goal_suit
+
+        # find others w/ same num of goal suit
+        rewarded_players = [] # player(s) with max goal suit
+        for player in self.players:
+            num_goal_suit = player.get_hand()[self.goalSuit]
+            if num_goal_suit == max_goal_suits:
+                rewarded_players.append(player)
+
+        for player in rewarded_players:
+            player.balanace += self.pot / len(rewarded_players)
